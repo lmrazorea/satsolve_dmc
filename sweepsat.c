@@ -170,6 +170,11 @@ int main(int argc, char *argv[]) {
   freesat(&sat);
   end = clock();
   time_spent = (double)(end - beg)/CLOCKS_PER_SEC;
+
+  printf("instance-execution: ");
+  for (int i = 0; i < argc; i++) {
+    printf("%s ", argv[i]);
+  }
   printf("runtime: %f seconds\n", time_spent);
   return 0;
 }

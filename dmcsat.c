@@ -38,8 +38,6 @@ void walk(int W, double duration, instance *sat) {
   double phop;          //probability of hopping to a neighboring vertex
   double ptel;          //probability of teleporting to another walker's location
   int action;           //0 = hop, 1 = teleport, 2 = sit
-  clock_t beg, end;     //for code timing
-  double time_spent;    //for code timing
   int umin, umax;       //the min&max number of unsatisfied clauses amongst occupied locations
   int winners;          //number of times a walker hits zero potential
   int sitters;          //number of times a walker sits in place
@@ -49,7 +47,6 @@ void walk(int W, double duration, instance *sat) {
   double time;          //the total time evolution elapsed
   double last_output;   //the time elapsed at the last screen output
   int steps;            //steps since last screen output
-  beg = clock();
   walkers1 = (walker *)malloc(W*sizeof(walker));
   walkers2 = (walker *)malloc(W*sizeof(walker));
   if(walkers1 == NULL || walkers2 == NULL) {
@@ -122,11 +119,8 @@ void walk(int W, double duration, instance *sat) {
     else printf("Found %i solutions:\n", winners);
     for(w = 0; w < W; w++) if(cur[w].unsat == 0) print_bits(cur[w].bs, sat->B);
   }
-  end = clock();
   free(walkers1);
   free(walkers2);
-  time_spent = (double)(end - beg)/CLOCKS_PER_SEC;
-  printf("runtime: %f seconds\n", time_spent);
 }
 
 //load a SAT instance and try to solve it using our Monte Carlo process
@@ -157,7 +151,17 @@ int main(int argc, char *argv[]) {
   printf("walkers = %i\n", W);
   printf("duration = %e\n", duration);
   printf("vscale = %e\n", vscale);
+
+  clock_t beg = clock();
   walk(W, duration, &sat);
+  clock_t end = clock();
+  double time_spent = (double)(end - beg)/CLOCKS_PER_SEC;
   freesat(&sat);
+
+  printf("instance-execution: ");
+  for (int i = 0; i < argc; i++) {
+    printf("%s ", argv[i]);
+  }
+  printf("runtime: %f seconds\n", time_spent);
   return 0;
 }
