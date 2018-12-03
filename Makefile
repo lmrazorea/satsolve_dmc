@@ -18,19 +18,19 @@ CFLAGS=-O3 -Wall
 all: dmcsat sweepsat verify
 
 dmcsat: dmcsat.o bitstrings.o sat.o walk.o
-	$(CC) $(CFLAGS) -lm dmcsat.o bitstrings.o sat.o walk.o -o dmcsat
+	$(CC) $(CFLAGS) dmcsat.o bitstrings.o sat.o walk.o -o dmcsat -lm
 
 sweepsat: sweepsat.o bitstrings.o sat.o walk.o
-	$(CC) $(CFLAGS) -lm sweepsat.o bitstrings.o sat.o walk.o -o sweepsat
+	$(CC) $(CFLAGS) sweepsat.o bitstrings.o sat.o walk.o -o sweepsat -lm
 
 verify: verify.c
 	$(CC) $(CFLAGS) verify.c -o verify
 
 dmcsat.o: dmcsat.c
-	$(CC) $(CFLAGS) -lm -c dmcsat.c
+	$(CC) $(CFLAGS) -c dmcsat.c
 
 sweepsat.o: sweepsat.c
-	$(CC) $(CFLAGS) -lm -c sweepsat.c
+	$(CC) $(CFLAGS) -c sweepsat.c
 
 bitstrings.o: bitstrings.c
 	$(CC) $(CFLAGS) -c bitstrings.c
@@ -43,3 +43,6 @@ walk.o: walk.c
 
 clean:
 	rm -f *~ dmcsat verify sweepsat *.o
+
+pack: clean
+	tar czf algorithm.tar.gz *.c *.h *.sh Makefile
