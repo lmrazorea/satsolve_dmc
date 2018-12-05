@@ -104,8 +104,9 @@ void walk(int W, double duration, instance *sat) {
     time += dt;
   }while(time < duration && winners == 0);
   if(winners > 0) {
-    if(winners == 1) printf("Found 1 solution:\n");
-    else printf("Found %i solutions:\n", winners);
+    //if(winners == 1) printf("Found 1 solution:\n");
+    //else printf("Found %i solutions:\n", winners);
+    printf("Best solutions found have 0 unsatisfied clauses.\n");
     for(w = 0; w < W; w++) if(cur[w].unsat == 0) print_bits(cur[w].bs, sat->B);
   }
   //if no satisfying assignments were found, print the best ones------------------
@@ -136,12 +137,13 @@ int main(int argc, char *argv[]) {
   clock_t beg, end;  //for code timing
   double time_spent; //for code timing
   beg = clock();
-  if(argc != 2) {
-    printf("Usage: loadsat filename.cnf\n");
-    return 0;
+  if(argc != 3) {
+    fprintf(stderr, "Usage: loadsat filename.cnf duration\n");
+    return 1;
   }
   success = loadsat(argv[1], &sat);
   if(!success) return 0;
+  duration = atof(argv[2]);
   //otherwise:
   printf("%i clauses, %i variables\n", sat.numclauses, sat.B);
   seed = time(NULL); //choose rng seed
@@ -149,11 +151,11 @@ int main(int argc, char *argv[]) {
   srand(seed);       //initialize rng
   //The following tuned parameters were obtained by trial and error.
   //They are tuned for random 3SAT at the sat/unsat phase transition.
-  duration = 120.0*exp(0.053*(double)sat.B);
+  //duration = 120.0*exp(0.053*(double)sat.B);
   //the following W and vscale are copied from Brad's code
   W = 128;
   vscale = 1.0;
-  if(sat.B == 150) duration = 10000;
+  //if(sat.B == 150) duration = 10000;
   //vscale = 75.0/(double)sat.B;
   //default from teleportation version
   //if(sat.B == 75) duration = 2000;
@@ -161,9 +163,9 @@ int main(int argc, char *argv[]) {
   printf("seed = %d\n", seed); //for reproducibility
   printf("bits = %i\n", sat.B);
   printf("walkers = %i\n", W);
-  printf("duration = %e\n", duration);
+  printf("duration = %f\n", duration);
   printf("vscale = %e\n", vscale);
-  for(trial = 0; trial < 10; trial++) {
+  for(trial = 0; trial < 50; trial++) {
     printf("trial %i\n", trial);
     walk(W, duration, &sat);
   }
