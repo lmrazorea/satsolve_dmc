@@ -9,7 +9,9 @@ PROBLEM_SELECTOR="$2"
 
 DURATION="$3"
 
-OUTPUT_SEPARATOR="========================================================================================="
+OUTPUT_DIR="$4"
+
+OUTPUT_SEPARATOR="==========================================="
 
 
 select_problems() {
@@ -33,8 +35,10 @@ select_problems() {
 }
 
 
+# The TOTAL_[...] variables represent statistics over the entire problem set defined by 'PROBLEM_SELECTOR'.
 TOTAL_TRIAL_COUNT=0
-TOTAL_SUCCESS_RATIO=0
+TOTAL_SUCCESS_COUNT=0
+TOTAL_RUNTIME=0.0
 
 run_problem_instance() {
 	problem_file_name="$1"
@@ -46,13 +50,31 @@ run_problem_instance() {
 		exit 1
 	fi
 	
-	output_digest=$(./sweepsat.exe  $problem_instance_path $DURATION | tee log.$problem_file_name.$DURATION.txt | grep -e trial -e instance-execution -e "Best solutions found have $min_clauses_not_matched" | tee /dev/tty)
+	# Parse the relevant details (the digest) from the output of the sat solver. Also, save to log files both the entire output and this digest.
+	output_digest=$(./sweepsat  $problem_instance_path $DURATION | tee $OUTPUT_DIR/log.$problem_file_name.$DURATION.txt | grep -e trial -e instance-execution -e "Best solutions found have $min_clauses_not_matched" | tee $OUTPUT_DIR/log-digest.$problem_file_name.$DURATION.txt)
 
-	trial_count=$(echo $output_digest | grep -o trial | wc -l)
+	# Count trials over the entire problem set.
+	trial_count=$(echo "$output_digest" | grep trial | wc -l)
 	((TOTAL_TRIAL_COUNT+=trial_count))
-	success_count=$(echo $output_digest | grep -o Best | wc -l)
-	((TOTAL_SUCCESS_RATIO+=success_count))
-	echo "instance-success-ratio: $success_count/$trial_count"
+
+	# Calculate the success ratio over the entire problem set.
+	success_count=$(echo "$output_digest" | grep "Best solutions found have" | wc -l)
+	((TOTAL_SUCCESS_COUNT+=success_count))
+
+	# Calculate the runtime over the entire problem set.
+	problem_runtime=$(echo "$output_digest" | grep instance-execution | grep -Eo 'runtime:.*' | parse_float)
+	TOTAL_RUNTIME=$(echo "scale=6; $TOTAL_RUNTIME + $problem_runtime" | bc | awk '{printf "%f", $0}')
+
+	success_ratio=$(echo "scale=6; $success_count / $trial_count" | bc | awk '{printf "%f", $0}')
+	echo "instance-success-ratio: $success_ratio ($success_count/$trial_count)"
+	echo "instance-runtime: $problem_runtime"
+	echo "$output_digest" | grep instance-execution
+}
+
+
+parse_float() {
+	read line
+	echo $line | grep -Eo '[0-9]+([.][0-9]+)?'
 }
 
 make 
@@ -66,4 +88,11 @@ done
 
 echo $OUTPUT_SEPARATOR
 
-echo "total-success-ratio: $TOTAL_SUCCESS_RATIO/$TOTAL_TRIAL_COUNT"
+PROBLEM_SET_SUCCESS_RATIO=$(echo "scale=6; $TOTAL_SUCCESS_COUNT / $TOTAL_TRIAL_COUNT" | bc | awk '{printf "%f", $0}')
+echo "problem-set-success-ratio: $PROBLEM_SET_SUCCESS_RATIO ($TOTAL_SUCCESS_COUNT/$TOTAL_TRIAL_COUNT)"
+
+AVG_PROBLEM_SET_RUNTIME=$(echo "scale=6; $TOTAL_RUNTIME / $TOTAL_TRIAL_COUNT" | bc | awk '{printf "%f", $0}')
+PROBLEM_SET_SCORE=$(echo "scale=6; ($AVG_PROBLEM_SET_RUNTIME / $PROBLEM_SET_SUCCESS_RATIO)" | bc | awk '{printf "%f", $0}')
+echo "problem-set-score: $PROBLEM_SET_SCORE"
+
+echo "total-runtime: $TOTAL_RUNTIME"
