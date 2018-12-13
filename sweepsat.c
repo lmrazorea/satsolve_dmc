@@ -137,13 +137,14 @@ int main(int argc, char *argv[]) {
   clock_t beg, end;  //for code timing
   double time_spent; //for code timing
   beg = clock();
-  if(argc != 3) {
-    fprintf(stderr, "Usage: loadsat filename.cnf duration\n");
+  if(argc != 4) {
+    fprintf(stderr, "Usage: loadsat filename.cnf duration trial-count\n");
     return 1;
   }
   success = loadsat(argv[1], &sat);
   if(!success) return 0;
   duration = atof(argv[2]);
+  int trial_count = atoi(argv[3]);
   //otherwise:
   printf("%i clauses, %i variables\n", sat.numclauses, sat.B);
   seed = time(NULL); //choose rng seed
@@ -164,8 +165,9 @@ int main(int argc, char *argv[]) {
   printf("bits = %i\n", sat.B);
   printf("walkers = %i\n", W);
   printf("duration = %f\n", duration);
+  printf("trial_count = %d\n", trial_count);
   printf("vscale = %e\n", vscale);
-  for(trial = 0; trial < 50; trial++) {
+  for(trial = 0; trial < trial_count; trial++) {
     printf("trial %i\n", trial);
     walk(W, duration, &sat);
   }
