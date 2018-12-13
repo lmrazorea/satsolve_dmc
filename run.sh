@@ -11,6 +11,8 @@ DURATION="$3"
 
 OUTPUT_DIR="$4"
 
+DEFINED_TRIAL_COUNT="10"
+
 OUTPUT_SEPARATOR="==========================================="
 
 
@@ -51,10 +53,14 @@ run_problem_instance() {
 	fi
 	
 	# Parse the relevant details (the digest) from the output of the sat solver. Also, save to log files both the entire output and this digest.
-	output_digest=$(./sweepsat  $problem_instance_path $DURATION | tee $OUTPUT_DIR/log.$problem_file_name.$DURATION.txt | grep -e trial -e instance-execution -e "Best solutions found have $min_clauses_not_matched" | tee $OUTPUT_DIR/log-digest.$problem_file_name.$DURATION.txt)
+	output_digest=$(./sweepsat  $problem_instance_path $DURATION $DEFINED_TRIAL_COUNT | tee $OUTPUT_DIR/log.$problem_file_name.$DURATION.txt | grep -e trial -e instance-execution -e "Best solutions found have $min_clauses_not_matched" | tee $OUTPUT_DIR/log-digest.$problem_file_name.$DURATION.txt)
 
 	# Count trials over the entire problem set.
-	trial_count=$(echo "$output_digest" | grep trial | wc -l)
+	trial_count=$(echo "$output_digest" | grep -w trial | wc -l)
+	if [ "$DEFINED_TRIAL_COUNT" != "$trial_count" ] ; then
+		echo "[run.sh] Error: $DEFINED_TRIAL_COUNT is different from $trial_count"
+		exit 1
+	fi
 	((TOTAL_TRIAL_COUNT+=trial_count))
 
 	# Calculate the success ratio over the entire problem set.
